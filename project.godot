@@ -19,6 +19,10 @@ config/name="Match3"
 run/main_scene="res://Game/Scenes/M3.tscn"
 config/icon="res://icon.png"
 
+[autoload]
+
+g_world="*res://Game/Logic/World.gd"
+
 [display]
 
 window/stretch/aspect="expand"
