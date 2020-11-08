@@ -20,27 +20,45 @@ func init():
 		# тип должен указывать на элемент следующий за последним, чтобы можно было брать значение по модулю в пределах полей. 
 		var type = randi() % (e_fields_types.EFT_EMPTY)
 		fields_model.append(type)
-		a_cols[ind % n_cols][ind / n_cols] = type
-		a_rows[ind / n_cols][ind % n_cols] = type
+		a_cols[ind % n_cols][ind / n_cols] = ind
+		a_rows[ind / n_cols][ind % n_cols] = ind
+		
+func find_all_potential_matches():
+	if fields_model.empty() == false:
+		if find_potential_matches(n_cols):
+			return
+		if find_potential_matches(a_rows):
+			return
 		
 # ищем потенциальные совпадения.
-func find_potential_matches():
-	# проходим по стобцам и строкам и ищем клетки с одним типом встречающиеся 2 раза подряд или через клетку.
-	if fields_model.empty() == false:
-		for i in n_cols:
-			var ret = find_potential_match_in_line(a_cols[i])
-			if ret != null:
-				match ret.size():
-					1: # проверить на столбик левее и правее(если есть)
-						# проверить левый столбик
-						if i > 0 && a_cols[i - 1][ret[0] + 1] == a_cols[i][ret[0]]:
-							show_potential_hint([a_cols[i - 1][ret[0] + 1], a_cols[i][ret[0]]])
-						# проверить правый столбик
-						if i < n_cols - 1 && a_cols[i + 1][ret[0] + 1] == a_cols[i][ret[0]]:
-							show_potential_hint([a_cols[i + 1][ret[0] + 1], a_cols[i][ret[0]]])
-					2: # показать подсказку
-						show_potential_hint([a_cols[i][ret[0]], a_cols[i][ret[1]]])
-						
+func find_potential_matches(a_rapid_array):
+	# проходим по стобцам и строкам и ищем клетки с одним типом встречающиеся 2 раза подряд или через клетку.	
+	for i in a_rapid_array:
+		var ret = find_potential_match_in_line(a_rapid_array[i])
+		if ret != null:
+			match ret.size():
+				1: # проверить на столбик левее и правее(если есть)
+					# проверить левый столбик
+					if i > 0 && fields_model[a_rapid_array[i - 1][ret[0] + 1]] == fields_model[a_rapid_array[i][ret[0]]]:
+						show_potential_hint([fields_model[a_rapid_array[i - 1][ret[0] + 1]], fields_model[a_rapid_array[i][ret[0]]]])
+						return true
+					# проверить правый столбик
+					if i < n_cols - 1 && fields_model[a_rapid_array[i + 1][ret[0] + 1]] == fields_model[a_rapid_array[i][ret[0]]]:
+						show_potential_hint([fields_model[a_rapid_array[i + 1][ret[0] + 1]], fields_model[a_rapid_array[i][ret[0]]]])
+						return true
+				2: # показать подсказку
+					show_potential_hint([fields_model[a_rapid_array[i][ret[0]]], fields_model[a_rapid_array[i][ret[1]]]])
+					return true
+				3: # проверка потенциального матча сзади
+					# проверить левый столбик
+					if i > 0 && fields_model[a_rapid_array[i - 1][ret[0] - 1]] == fields_model[a_rapid_array[i][ret[0]]]:
+						show_potential_hint([fields_model[a_rapid_array[i - 1][ret[0] - 1]], fields_model[a_rapid_array[i][ret[0]]]])
+						return true
+					# проверить правый столбик
+					if i < n_cols - 1 && fields_model[a_rapid_array[i + 1][ret[0] - 1]] == fields_model[a_rapid_array[i][ret[0]]]:
+						show_potential_hint([fields_model[a_rapid_array[i + 1][ret[0] - 1]], fields_model[a_rapid_array[i][ret[0]]]])
+						return true
+	return false
 # анимация подсказки на двух клетках о потенциальном матче
 func show_potential_hint(a_inds):
 	pass
@@ -50,16 +68,26 @@ func find_potential_match_in_line(line_array):
 	# найти последовательность одинаковых значений из 2 элементов подряд или через один.
 	for i in n_cols - 3:
 		# ++-+
-		if line_array[i] == line_array[i + 1] && line_array[i] == line_array[i + 3]:
+		if fields_model[line_array[i]] == fields_model[line_array[i + 1]] && fields_model[line_array[i]] == fields_model[line_array[i + 3]]:
 			return [i + 2, i + 3]
 		# +-++
-		if line_array[i] != line_array[i + 1] && line_array[i] == line_array[i + 2] && line_array[i] == line_array[i + 3]:
+		if fields_model[line_array[i]] != fields_model[line_array[i + 1]] && fields_model[line_array[i]] == fields_model[line_array[i + 2]] && fields_model[line_array[i]] == fields_model[line_array[i + 3]]:
 			return [i, i + 1]
 		#  ?
 		# +-+
 		#  ?
-		if line_array[i] != line_array[i + 1] && line_array[i] == line_array[i + 2]:
+		if fields_model[line_array[i]] != fields_model[line_array[i + 1]] && fields_model[line_array[i]] == fields_model[line_array[i + 2]]:
 			return [i]
+		#   ?
+		# ++-
+		#   ?
+		if fields_model[line_array[i]] == fields_model[line_array[i + 1]] && i + 2 < n_cols:
+			return [i]
+		# ?
+		# -++
+		# ?
+		if fields_model[line_array[i]] == fields_model[line_array[i + 1]] && i > 0:
+			return [i , 0, 0]
 	return null
 
 # ищем совпадения по всему игровому полю.
