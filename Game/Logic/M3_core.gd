@@ -3,18 +3,64 @@ extends Node
 var n_cols = 10
 var fields_model = []
 enum e_fields_types{EFT_RED, EFT_GREEN, EFT_BLUE, EFT_YELLOW, EFT_EMPTY, EFT_ROCK, EFT_SAND, EFT_M3, EFT_M4, EFT_M5, EFT_M6}
+var a_cols = []
+var a_rows = []
 
 func init():
 	randomize()
+	# вспомогательные массивы столбцов и строк для быстрой проверки совпадений
+	a_cols.resize(n_cols)
+	a_rows.resize(n_cols)
+	for i in n_cols:
+		a_cols[i] = []
+		a_cols[i].resize(n_cols)
+		a_rows[i] = []
+		a_rows[i].resize(n_cols)
 	for ind in n_cols * n_cols:
 		# тип должен указывать на элемент следующий за последним, чтобы можно было брать значение по модулю в пределах полей. 
-		fields_model.append(randi() % (e_fields_types.EFT_EMPTY))
+		var type = randi() % (e_fields_types.EFT_EMPTY)
+		fields_model.append(type)
+		a_cols[ind % n_cols][ind / n_cols] = type
+		a_rows[ind / n_cols][ind % n_cols] = type
 		
 # ищем потенциальные совпадения.
 func find_potential_matches():
 	# проходим по стобцам и строкам и ищем клетки с одним типом встречающиеся 2 раза подряд или через клетку.
-	# для обнаруженных комбинаций ищем, для недостающего поля, рядом расположенную клетку того же типа но в другой строке или столбце.
+	if fields_model.empty() == false:
+		for i in n_cols:
+			var ret = find_potential_match_in_line(a_cols[i])
+			if ret != null:
+				match ret.size():
+					1: # проверить на столбик левее и правее(если есть)
+						# проверить левый столбик
+						if i > 0 && a_cols[i - 1][ret[0] + 1] == a_cols[i][ret[0]]:
+							show_potential_hint([a_cols[i - 1][ret[0] + 1], a_cols[i][ret[0]]])
+						# проверить правый столбик
+						if i < n_cols - 1 && a_cols[i + 1][ret[0] + 1] == a_cols[i][ret[0]]:
+							show_potential_hint([a_cols[i + 1][ret[0] + 1], a_cols[i][ret[0]]])
+					2: # показать подсказку
+						show_potential_hint([a_cols[i][ret[0]], a_cols[i][ret[1]]])
+						
+# анимация подсказки на двух клетках о потенциальном матче
+func show_potential_hint(a_inds):
 	pass
+	
+# массив индексов потенциально совпавших элементов в общем массиве.
+func find_potential_match_in_line(line_array):
+	# найти последовательность одинаковых значений из 2 элементов подряд или через один.
+	for i in n_cols - 3:
+		# ++-+
+		if line_array[i] == line_array[i + 1] && line_array[i] == line_array[i + 3]:
+			return [i + 2, i + 3]
+		# +-++
+		if line_array[i] != line_array[i + 1] && line_array[i] == line_array[i + 2] && line_array[i] == line_array[i + 3]:
+			return [i, i + 1]
+		#  ?
+		# +-+
+		#  ?
+		if line_array[i] != line_array[i + 1] && line_array[i] == line_array[i + 2]:
+			return [i]
+	return null
 
 # ищем совпадения по всему игровому полю.
 func find_all_matches():
