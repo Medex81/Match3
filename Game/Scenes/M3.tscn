@@ -16,8 +16,9 @@ __meta__ = {
 [node name="TextureRect_scene_back" type="TextureRect" parent="."]
 anchor_right = 1.0
 anchor_bottom = 1.0
+margin_top = -2.0
 margin_right = 256.0
-margin_bottom = 120.0
+margin_bottom = 118.0
 texture = ExtResource( 2 )
 expand = true
 stretch_mode = 7
@@ -54,3 +55,13 @@ script = ExtResource( 3 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
+
+[node name="Button" type="Button" parent="."]
+anchor_right = 0.036
+anchor_bottom = 0.09
+margin_left = 857.0
+margin_top = 299.0
+margin_right = 893.136
+margin_bottom = 265.0
+text = "find matches"
+[connection signal="button_up" from="Button" to="." method="_on_Button_button_up"]

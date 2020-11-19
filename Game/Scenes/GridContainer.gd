@@ -9,7 +9,17 @@ onready var scene_core = preload("res://Game/Logic/M3_core.gd").new()
 var n_field_size = 50
 var a_cells = []
 
-func _ready():	
+func check_matches():
+	if a_cells.empty() == false:
+			scene_core.find_all_matches()
+
+func match_proc(match_idxs):
+	for match_idx in match_idxs:
+		for idx in match_idx:
+			a_cells[idx].get_node("Node2D/Sprite_select").visible = true
+
+func _ready():
+	scene_core.pf_match_clb = funcref(self, "match_proc")
 	scene_core.init()
 	if scene_core.n_cols != null:
 		columns = scene_core.n_cols
@@ -27,6 +37,7 @@ func _ready():
 					container.add_child(field_red.instance())
 				scene_core.e_fields_types.EFT_YELLOW:
 					container.add_child(field_yellow.instance())
+		
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 #func _process(delta):
 #	pass
