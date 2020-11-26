@@ -1,16 +1,31 @@
 extends Node
 
-var n_cols = 10
+# размерность матрицы игрового поля(квадратная)
+const n_cols = 10
+# массив клеток игрового поля
 var fields_model = []
+# типы клеток
 enum e_fields_types{EFT_RED, EFT_GREEN, EFT_BLUE, EFT_YELLOW, EFT_EMPTY, EFT_ROCK, EFT_SAND, EFT_M3, EFT_M4, EFT_M5, EFT_M6}
+# быстрые массивы для перебора клеток по строкам и столбцам
 var a_cols = []
 var a_rows = []
-
+var a_empty_cells = []
+# указатель на функцию в скрипте сцены отвечающий за обработку матчей
 var pf_match_clb = null
+# указатель на функцию в скрипте сцены отвечающий за обмен типами клеток
+var pf_swap_clb = null
+# указатель на функцию в скрипте сцены отвечающий за создание клеток
+var pf_create_clb = null
+# 2 - поиск пересечений 3 и более последовательных клеток
+# 1 - поиск пересечений 2 и более последовательных клеток, находит пересечения 2 х 2х
+const n_cross_match_len = 2
+var timer = null
+const timer_wait_time = 0.5
+enum e_shift_direction{TOP, LEFT, RIGHT, BOTTOM}
+var shift_direction = e_shift_direction.TOP
 
 func init():
 	randomize()
-	# вспомогательные массивы столбцов и строк для быстрой проверки совпадений
 	a_cols.resize(n_cols)
 	a_rows.resize(n_cols)
 	for i in n_cols:
@@ -24,6 +39,11 @@ func init():
 		fields_model.append(type)
 		a_cols[ind % n_cols][ind / n_cols] = ind
 		a_rows[ind / n_cols][ind % n_cols] = ind
+	if timer == null:
+		timer = Timer.new()
+		timer.connect("timeout",self,"_on_timer_timeout")
+		timer.set_wait_time( timer_wait_time )
+		add_child(timer)
 		
 func find_all_potential_matches():
 	if fields_model.empty() == false:
@@ -159,7 +179,21 @@ func match_awards(matched_inds):
 			pass
 		6:
 			pass
-
+	# удаляем индексы совпавших клеток из основного массива
+	a_empty_cells.clear()
+	for matched in matched_inds:
+		a_empty_cells += matched
+		for ind in matched:
+			fields_model[ind] = e_fields_types.EFT_EMPTY
+	matched_inds.clear()
+	if a_empty_cells.empty() == true || timer == null:
+		return
+	a_empty_cells.sort()
+	for ind in range(a_empty_cells.size() - 1):
+		if a_empty_cells[ind] == a_empty_cells[ind + 1]:
+			a_empty_cells[ind] = -1
+	shift_from()
+		
 # массив индексов совпавших элементов в общем массиве.
 func find_match_in_line(line_array):
 	# найти непрерывную последовательность одинаковых значений из 3 и более элементов.
@@ -177,7 +211,7 @@ func find_match_in_line(line_array):
 		# конец последовательности текущего типа
 		if walk_type != fields_model[line_array[i]]:
 			# берём последовательности от двух подряд потому, что они могут стоять перпендикулярно
-			if cur_count > 1:
+			if cur_count > n_cross_match_len:
 				# в возращаемом массиве индекс в строке быстрого массива и размер последовательности
 				ret.append([i - cur_count, cur_count])
 			walk_type = fields_model[line_array[i]]
@@ -189,9 +223,49 @@ func find_match_in_line(line_array):
 	return ret
 
 # генерируем новые элементы и двигаем сверху вниз по свободным клеткам.
-func shift_from_top():
-	# получаем список индексов в которых было совпадение, а значит теперь они пустые.
-	# смещаем вниз тип из клетки расположенной выше.
-	# если выше статический элемент - пробуем заполнить из бокового столбика, если нет - пропускаем. 
-	# если клетка есть, смещаем последовательно до самого верха. в верхнюю клетку добавляем созданный элемент.
-	pass
+func shift_from():
+	timer.stop()
+	timer.start()
+	
+func _on_timer_timeout():
+	# по какой-то причине не создан обработчик создания клеток на стороне представления
+	if pf_create_clb == null:
+		return
+	# проверяем, что в массиве пустых клеток нет нуждающихся в обработке
+	var is_proc = false
+	# проходим по массиву пустых клеток и заменяем их на выше расположенные или боковые
+	for ind in range(a_empty_cells.size()):
+		# клетки для которых уже были сгенерированы типы (в верхнем столбике) помечаем как обработанные (-1)
+		if a_empty_cells[ind] != -1:
+			# обрабатываем пустые клетки
+			is_proc = true
+			# сдвиг клетки по указанному направлению
+			match shift_direction:
+				e_shift_direction.TOP:
+					# находимся на верхней строке
+					if a_empty_cells[ind] < n_cols:
+						# сгенерировали новый тип клетки
+						var type = randi() % (e_fields_types.EFT_EMPTY)
+						# заменили старий тип в модели на новый
+						fields_model[a_empty_cells[ind]] = type
+						# вызвали метод из представления отвечающий за визуализацию создания новой клетки с новым типом
+						pf_create_clb.call_func(a_empty_cells[ind], type)
+						# удаляем из обрабатываемого массива пустых клеток - созданную
+						a_empty_cells[ind] = -1
+					else:
+						# позиция выше с которой перемещаем клетку
+						var top_ind = a_empty_cells[ind] - n_cols
+						# проверяем, что выше не пустая клетка
+						if a_empty_cells.has(top_ind):
+							continue
+						# тип перемещаемой сверху клетки
+						var bt_type = fields_model[top_ind]
+						# меняем типы клеток
+						fields_model[a_empty_cells[ind]] = fields_model[top_ind]
+						fields_model[top_ind] = bt_type
+						# просим представление обменять клетки
+						pf_swap_clb.call_func(top_ind, a_empty_cells[ind])
+						# в массиве пустых клеток меняем значение индекса на индекс клетки сверху
+						a_empty_cells[ind] = top_ind
+	if is_proc == false:
+		timer.stop()

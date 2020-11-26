@@ -11,15 +11,42 @@ var a_cells = []
 
 func check_matches():
 	if a_cells.empty() == false:
-			scene_core.find_all_matches()
+		scene_core.find_all_matches()
 
 func match_proc(match_idxs):
-	for match_idx in match_idxs:
-		for idx in match_idx:
-			a_cells[idx].get_node("Node2D/Sprite_select").visible = true
+	for matched in match_idxs:
+		for ind in matched:
+			if a_cells[ind].has_node("Node2D") == true:
+				a_cells[ind].get_node("Node2D").queue_free()
+				
+func swap_proc(from_ind, to_ind):
+	var from = a_cells[from_ind].get_node("Node2D")
+	var to = a_cells[to_ind].get_node("Node2D")
+	if from != null && to == null :
+		a_cells[from_ind].remove_child(from)
+		a_cells[to_ind].add_child(from)
+	else:
+		print("Error swap_proc(to - not empty) -> from_ind " + from_ind + ", to_ind " + to_ind)
+	
+func create_proc(ind, type):
+	if a_cells[ind].has_node("Node2D") == false:
+		match type:
+			scene_core.e_fields_types.EFT_BLUE:
+				a_cells[ind].add_child(field_blue.instance())
+			scene_core.e_fields_types.EFT_GREEN:
+				a_cells[ind].add_child(field_green.instance())
+			scene_core.e_fields_types.EFT_RED:
+				a_cells[ind].add_child(field_red.instance())
+			scene_core.e_fields_types.EFT_YELLOW:
+				a_cells[ind].add_child(field_yellow.instance())
+	else:
+		print("Error create_proc(cell in ind not empty) -> ind " + ind + ",type " + type)
 
 func _ready():
+	add_child(scene_core)
 	scene_core.pf_match_clb = funcref(self, "match_proc")
+	scene_core.pf_swap_clb = funcref(self, "swap_proc")
+	scene_core.pf_create_clb = funcref(self, "create_proc")
 	scene_core.init()
 	if scene_core.n_cols != null:
 		columns = scene_core.n_cols
@@ -41,3 +68,17 @@ func _ready():
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 #func _process(delta):
 #	pass
+
+
+func _on_Button_redraw_button_up():
+	for ind in range(scene_core.fields_model.size()):
+		a_cells[ind].get_node("Node2D").queue_free()
+		match scene_core.fields_model[ind]:
+			scene_core.e_fields_types.EFT_BLUE:
+				a_cells[ind].add_child(field_blue.instance())
+			scene_core.e_fields_types.EFT_GREEN:
+				a_cells[ind].add_child(field_green.instance())
+			scene_core.e_fields_types.EFT_RED:
+				a_cells[ind].add_child(field_red.instance())
+			scene_core.e_fields_types.EFT_YELLOW:
+				a_cells[ind].add_child(field_yellow.instance())

@@ -64,4 +64,9 @@ margin_top = 299.0
 margin_right = 893.136
 margin_bottom = 265.0
 text = "find matches"
+
+[node name="Button_redraw" type="Button" parent="."]
+margin_right = 12.0
+margin_bottom = 20.0
 [connection signal="button_up" from="Button" to="." method="_on_Button_button_up"]
+[connection signal="button_up" from="Button_redraw" to="GridContainer" method="_on_Button_redraw_button_up"]
