@@ -41,12 +41,19 @@ func create_proc(ind, type):
 				a_cells[ind].add_child(field_yellow.instance())
 	else:
 		print("Error create_proc(cell in ind not empty) -> ind " + ind + ",type " + type)
+		
+func hint_proc(from_ind, to_ind):
+	if a_cells[from_ind].has_node("Node2D/Sprite_select") == true:
+		a_cells[from_ind].get_node("Node2D/Sprite_select").visible = true
+	if a_cells[to_ind].has_node("Node2D/Sprite_select") == true:
+		a_cells[to_ind].get_node("Node2D/Sprite_select").visible = true
 
 func _ready():
 	add_child(scene_core)
 	scene_core.pf_match_clb = funcref(self, "match_proc")
 	scene_core.pf_swap_clb = funcref(self, "swap_proc")
 	scene_core.pf_create_clb = funcref(self, "create_proc")
+	scene_core.pf_hint_clb =  funcref(self, "hint_proc")
 	scene_core.init()
 	if scene_core.n_cols != null:
 		columns = scene_core.n_cols
@@ -82,3 +89,7 @@ func _on_Button_redraw_button_up():
 				a_cells[ind].add_child(field_red.instance())
 			scene_core.e_fields_types.EFT_YELLOW:
 				a_cells[ind].add_child(field_yellow.instance())
+
+
+func _on_Button2_button_up():
+	scene_core.find_all_potential_matches()

@@ -61,12 +61,25 @@ anchor_right = 0.036
 anchor_bottom = 0.09
 margin_left = 857.0
 margin_top = 299.0
-margin_right = 893.136
+margin_right = 939.136
 margin_bottom = 265.0
 text = "find matches"
 
 [node name="Button_redraw" type="Button" parent="."]
-margin_right = 12.0
-margin_bottom = 20.0
+margin_left = 859.0
+margin_top = 330.0
+margin_right = 954.0
+margin_bottom = 350.0
+text = "check draw cells"
+
+[node name="Button2" type="Button" parent="."]
+anchor_right = 0.012
+anchor_bottom = 0.033
+margin_left = 858.0
+margin_top = 364.0
+margin_right = 965.712
+margin_bottom = 364.2
+text = "get hint"
 [connection signal="button_up" from="Button" to="." method="_on_Button_button_up"]
 [connection signal="button_up" from="Button_redraw" to="GridContainer" method="_on_Button_redraw_button_up"]
+[connection signal="button_up" from="Button2" to="GridContainer" method="_on_Button2_button_up"]
