@@ -7,9 +7,6 @@ const n_rows = 10
 var fields_model = []
 # типы клеток
 enum e_fields_types{EFT_RED, EFT_GREEN, EFT_BLUE, EFT_YELLOW, EFT_EMPTY, EFT_ERROR, EFT_ROCK, EFT_SAND, EFT_M3, EFT_M4, EFT_M5, EFT_M6}
-# быстрые массивы для перебора клеток по строкам и столбцам
-#var a_cols = []
-#var a_rows = []
 var a_empty_cells = []
 # указатель на функцию в скрипте сцены отвечающий за обработку матчей
 var pf_match_clb = null
@@ -23,7 +20,7 @@ var pf_hint_clb = null
 # 1 - поиск пересечений 2 и более последовательных клеток, находит пересечения 2 х 2х
 const n_cross_match_len = 2
 var timer = null
-const timer_wait_time = 0.5
+const timer_wait_time = 0.2
 enum e_shift_direction{TOP, LEFT, RIGHT, BOTTOM}
 var shift_direction = e_shift_direction.TOP
 
@@ -47,7 +44,11 @@ func get_type_from_pos(x, y):
 
 func get_ind_from_pos(x, y):
 	return y * n_cols + x
+	
+func get_pos_from_ind(index):
+	return Vector2(index % n_cols, index / n_rows)
 
+# найти возможный матч
 func find_all_potential_matches():
 	for x in n_cols:
 		for y in n_rows:
@@ -130,8 +131,30 @@ func show_potential_hint(from_ind, to_ind):
 	if pf_hint_clb != null:
 		pf_hint_clb.call_func(from_ind, to_ind)
 
-# ищем совпадения по всему игровому полю.
-func find_all_matches():
+# проверить, что ячейки смежные
+func is_near(first_index, second_index):	
+	var first_pos = get_pos_from_ind(first_index)
+	var second_pos = get_pos_from_ind(second_index)
+	if first_pos + Vector2(-1, 0) == second_pos || first_pos + Vector2(+1, 0) == second_pos || first_pos + Vector2(0, -1) == second_pos || first_pos + Vector2(0, +1) == second_pos:
+		return true
+	return false
+
+# проверить, что после обмена ячеек появился матч
+func check_swap_cells(first_index, second_index):
+	var tmp = fields_model[first_index]
+	fields_model[first_index] = fields_model[second_index]
+	fields_model[second_index] = tmp	
+	var matches = find_matches()
+	if pf_swap_clb && !matches.empty():
+		pf_swap_clb.call_func(first_index, second_index)
+		match_awards(matches)
+	# матча нет - вернуть назад
+	else:
+		tmp = fields_model[second_index]
+		fields_model[second_index] = fields_model[first_index]
+		fields_model[first_index] = tmp
+	
+func find_matches():
 	var raw_matches = {}
 	for x in n_cols:
 		# количество совпадений текущего типа
@@ -204,8 +227,7 @@ func find_all_matches():
 					if type_match[match_ind + 1].has(item):
 						type_match[match_ind] += type_match[match_ind + 1]
 						type_match[match_ind + 1].clear()
-						
-	# проходим то совпадениям типов кристаллов
+	# проходим то совпадениям типов кристаллов совмещённых
 	var multi_match_inds = []
 	for key in raw_matches:
 		var type_match = raw_matches[key]
@@ -217,12 +239,18 @@ func find_all_matches():
 				for pos in match_arr:
 					match_inds.append(get_ind_from_pos(pos[0], pos[1]))
 				multi_match_inds.append(match_inds)
-	match_awards(multi_match_inds)
+	return multi_match_inds
+
+# ищем совпадения по всему игровому полю.
+func find_all_matches():
+	match_awards(find_matches())
 
 # выдаём награду за совпадение(очки, подсказки).
 func match_awards(multi_match_inds):	
-	if pf_match_clb:
+	if pf_match_clb && !multi_match_inds.empty():
 		pf_match_clb.call_func(multi_match_inds)
+	else:
+		return
 	# количество совпадений
 #	match match_inds.size():
 #		3:
@@ -252,7 +280,7 @@ func match_awards(multi_match_inds):
 func shift_from():
 	timer.stop()
 	timer.start()
-	
+# по таймеру будем смещать ячейки в выбранном направлении имитируя падение
 func _on_timer_timeout():
 	# по какой-то причине не создан обработчик создания клеток на стороне представления
 	if pf_create_clb == null:
@@ -295,3 +323,5 @@ func _on_timer_timeout():
 						a_empty_cells[ind] = top_ind
 	if is_proc == false:
 		timer.stop()
+		# после матча и смещения ячеек проверяем что не появилось новых матчей
+		find_all_matches()
