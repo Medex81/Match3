@@ -1,12 +1,17 @@
 extends GridContainer
 
 # Сцены ячеек
-onready var field_red = preload("res://Game/Scenes/FieldRed.tscn")
-onready var field_blue = preload("res://Game/Scenes/FieldBlue.tscn")
-onready var field_yellow = preload("res://Game/Scenes/FieldYellow.tscn")
-onready var field_green = preload("res://Game/Scenes/FieldGreen.tscn")
+onready var field = preload("res://Game/Scenes/Field.tscn")
+onready var field_select = preload("res://Game/Managers/Effects/Border/Border.tscn")
+
+onready var blue_gem_tex_res = preload("res://Game/Assets/stone_blue.png")
+onready var green_gem_tex_res = preload("res://Game/Assets/stone_green.png")
+onready var yellow_gem_tex_res = preload("res://Game/Assets/stone_yellow.png")
+onready var red_gem_tex_res = preload("res://Game/Assets/stone_pink.png")
+
 # Логика сцены
 onready var scene_core = preload("res://Game/Logic/M3_core.gd").new()
+onready var effects_mgr = preload("res://Game/Managers/Effects_mgr.gd").new()
 # размер ячейки в пикселах
 var n_field_size = 50
 var a_cells = []
@@ -39,16 +44,16 @@ func swap_proc(from_ind, to_ind):
 # создать ячейку
 func create_proc(ind, type):
 	if a_cells[ind].has_node("Node2D") == false:
-		var new_cell = null
+		var new_cell = field.instance()
 		match type:
 			scene_core.e_fields_types.EFT_BLUE:
-				new_cell = field_blue.instance()
+				new_cell.texture = blue_gem_tex_res
 			scene_core.e_fields_types.EFT_GREEN:
-				new_cell = field_green.instance()
+				new_cell.texture = green_gem_tex_res
 			scene_core.e_fields_types.EFT_RED:
-				new_cell = field_red.instance()
+				new_cell.texture = red_gem_tex_res
 			scene_core.e_fields_types.EFT_YELLOW:
-				new_cell = field_yellow.instance()
+				new_cell.texture = yellow_gem_tex_res
 		if new_cell != null:
 			a_cells[ind].add_child(new_cell)
 			# добавим калбек для отслеживания клика на ячейке
@@ -72,19 +77,16 @@ func _ready():
 	scene_core.init()
 	if scene_core.n_cols != null:
 		columns = scene_core.n_cols
-		var new_cell = null		
 		for type in scene_core.fields_model:
 			var control = Control.new()
 			control.rect_min_size = Vector2(n_field_size, n_field_size)
 			a_cells.append(control)
 			add_child(control)
 			create_proc(a_cells.size() - 1, type)
+		
 	# проверим наличие матчей после старта
 	check_matches()
 		
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-#func _process(delta):
-#	pass
 
 # был клик по ячейке
 func on_controlClicked(sender):
@@ -96,6 +98,7 @@ func on_controlClicked(sender):
 			if item.get_global_rect().has_point(get_global_mouse_position()):
 				var second_index = a_cells.find(item)
 				print("Swap cells  -> %d - %d" % [index, second_index])
+				effects_mgr.set_unique_effect(a_cells[second_index].get_node("Node2D"), "Border")
 				# проверяем, что ячейки смежные
 				if index != second_index && scene_core.is_near(index, second_index):
 					scene_core.check_swap_cells(index, second_index)

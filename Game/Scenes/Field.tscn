@@ -1,0 +1,16 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://Game/Scenes/Field.gd" type="Script" id=1]
+[ext_resource path="res://Game/Assets/stone_blue.png" type="Texture" id=2]
+
+[node name="Node2D" type="TextureRect"]
+margin_right = 47.0
+margin_bottom = 47.0
+rect_min_size = Vector2( 47, 47 )
+texture = ExtResource( 2 )
+script = ExtResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+[connection signal="gui_input" from="." to="." method="_on_Node2D_gui_input"]
+[connection signal="mouse_entered" from="." to="." method="_on_Node2D_mouse_entered"]
