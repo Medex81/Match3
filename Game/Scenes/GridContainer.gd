@@ -2,7 +2,6 @@ extends GridContainer
 
 # Сцены ячеек
 onready var field = preload("res://Game/Scenes/Field.tscn")
-#onready var field_select = preload("res://Game/Managers/Effects/Border/Border.tscn")
 
 onready var blue_gem_tex_res = preload("res://Game/Assets/stone_blue.png")
 onready var green_gem_tex_res = preload("res://Game/Assets/stone_green.png")
@@ -23,6 +22,7 @@ onready var effects_mgr = preload("res://Game/Managers/Effects_mgr.gd").new()
 var n_field_size = 50
 var a_cells = []
 var sel_type = null
+var cell_types_dict = null
 
 func set_sel_type(type):
 	sel_type = type
@@ -58,24 +58,8 @@ func swap_proc(from_ind, to_ind):
 func create_proc(ind, type):
 	if a_cells[ind].has_node("Node2D") == false:
 		var new_cell = field.instance()
-		match type:
-			scene_core.e_fields_types.EFT_BLUE:
-				new_cell.texture = blue_gem_tex_res
-			scene_core.e_fields_types.EFT_GREEN:
-				new_cell.texture = green_gem_tex_res
-			scene_core.e_fields_types.EFT_RED:
-				new_cell.texture = red_gem_tex_res
-			scene_core.e_fields_types.EFT_YELLOW:
-				new_cell.texture = yellow_gem_tex_res
-			scene_core.e_fields_types.EFT_M4:
-				new_cell.texture = m4_tex_res
-			scene_core.e_fields_types.EFT_M5:
-				new_cell.texture = m5_tex_res
-			scene_core.e_fields_types.EFT_M6:
-				new_cell.texture = m6_tex_res
-			scene_core.e_fields_types.EFT_M7:
-				new_cell.texture = m7_tex_res
-		if new_cell != null:
+		new_cell.texture = cell_types_dict[type]
+		if new_cell.texture:
 			a_cells[ind].add_child(new_cell)
 			# добавим калбек для отслеживания клика на ячейке
 			new_cell.cb_click =  funcref(self, "on_controlClicked")
@@ -97,6 +81,19 @@ func set_timeout(time:String):
 
 func _ready():
 	add_child(scene_core)
+	cell_types_dict = {
+		scene_core.e_fields_types.EFT_RED: red_gem_tex_res, 
+		scene_core.e_fields_types.EFT_GREEN: green_gem_tex_res, 
+		scene_core.e_fields_types.EFT_BLUE: blue_gem_tex_res, 
+		scene_core.e_fields_types.EFT_YELLOW: yellow_gem_tex_res,
+		scene_core.e_fields_types.EFT_ROCK: null, 
+		scene_core.e_fields_types.EFT_SAND: null,
+		scene_core.e_fields_types.EFT_M4: m4_tex_res, 
+		scene_core.e_fields_types.EFT_M5: m5_tex_res, 
+		scene_core.e_fields_types.EFT_M6: m6_tex_res, 
+		scene_core.e_fields_types.EFT_M7: m7_tex_res
+	}
+	
 	# калбеки для логики сцены
 	scene_core.pf_match_clb = funcref(self, "match_proc")
 	scene_core.pf_swap_clb = funcref(self, "swap_proc")
@@ -114,49 +111,18 @@ func _ready():
 			a_cells.append(control)
 			add_child(control)
 			create_proc(a_cells.size() - 1, type)
-		
 	# проверим наличие матчей после старта
 	check_matches()
 	
 func get_unique_cells():
-	var ret = []	
+	var ret = []
 	for type in scene_core.e_fields_types.values():
-		var new_cell = null
-		match type:
-			scene_core.e_fields_types.EFT_BLUE:
-				new_cell = field.instance()
-				new_cell.texture = blue_gem_tex_res
-				new_cell.cell_type = scene_core.e_fields_types.EFT_BLUE
-			scene_core.e_fields_types.EFT_GREEN:
-				new_cell = field.instance()
-				new_cell.texture = green_gem_tex_res
-				new_cell.cell_type = scene_core.e_fields_types.EFT_GREEN
-			scene_core.e_fields_types.EFT_RED:
-				new_cell = field.instance()
-				new_cell.texture = red_gem_tex_res
-				new_cell.cell_type = scene_core.e_fields_types.EFT_RED
-			scene_core.e_fields_types.EFT_YELLOW:
-				new_cell = field.instance()
-				new_cell.texture = yellow_gem_tex_res
-				new_cell.cell_type = scene_core.e_fields_types.EFT_YELLOW
-			scene_core.e_fields_types.EFT_M4:
-				new_cell = field.instance()
-				new_cell.texture = m4_tex_res
-				new_cell.cell_type = scene_core.e_fields_types.EFT_M4
-			scene_core.e_fields_types.EFT_M5:
-				new_cell = field.instance()
-				new_cell.texture = m5_tex_res
-				new_cell.cell_type = scene_core.e_fields_types.EFT_M5
-			scene_core.e_fields_types.EFT_M6:
-				new_cell = field.instance()
-				new_cell.texture = m6_tex_res
-				new_cell.cell_type = scene_core.e_fields_types.EFT_M6
-			scene_core.e_fields_types.EFT_M7:
-				new_cell = field.instance()
-				new_cell.texture = m7_tex_res
-				new_cell.cell_type = scene_core.e_fields_types.EFT_M7
-		if new_cell != null:
-			ret.append(new_cell)
+		if cell_types_dict.has(type):
+			var new_cell = field.instance()
+			new_cell.texture = cell_types_dict[type]
+			if new_cell.texture:
+				new_cell.cell_type = type
+				ret.append(new_cell)
 	return ret
 
 # был клик по ячейке
