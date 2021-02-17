@@ -1,6 +1,7 @@
 extends TextureRect
 
 var cb_click = null
+var cell_type = null
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -12,5 +13,5 @@ func _ready():
 
 func _on_Node2D_gui_input(event):
 	if event is InputEventMouseButton && event.button_index == BUTTON_LEFT && cb_click != null && !event.pressed:
-		cb_click.call_func(self.get_parent())
+		cb_click.call_func(self)
 

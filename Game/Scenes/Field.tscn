@@ -8,6 +8,7 @@ margin_right = 47.0
 margin_bottom = 47.0
 rect_min_size = Vector2( 47, 47 )
 texture = ExtResource( 2 )
+expand = true
 script = ExtResource( 1 )
 __meta__ = {
 "_edit_use_anchors_": false

@@ -1,0 +1,55 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://Game/Assets/points.png" type="Texture" id=1]
+[ext_resource path="res://Game/Assets/time_scores.png" type="Texture" id=2]
+
+[node name="BaseContainer" type="MarginContainer"]
+margin_right = 120.0
+margin_bottom = 40.0
+rect_min_size = Vector2( 120, 40 )
+size_flags_stretch_ratio = 0.0
+custom_constants/margin_right = 2
+custom_constants/margin_top = 2
+custom_constants/margin_left = 2
+custom_constants/margin_bottom = 2
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="NinePatchRect" type="NinePatchRect" parent="."]
+margin_left = 2.0
+margin_top = 2.0
+margin_right = 118.0
+margin_bottom = 38.0
+texture = ExtResource( 2 )
+patch_margin_left = 20
+patch_margin_top = 16
+patch_margin_right = 14
+patch_margin_bottom = 14
+
+[node name="TextureRect" type="TextureRect" parent="NinePatchRect"]
+anchor_top = 0.5
+anchor_bottom = 0.5
+margin_top = -20.0
+margin_right = 40.0
+margin_bottom = 20.0
+rect_min_size = Vector2( 40, 40 )
+texture = ExtResource( 1 )
+expand = true
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Label" type="Label" parent="NinePatchRect"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 40.0
+margin_top = 2.0
+margin_right = -8.0
+text = "hhhhhhjj"
+align = 2
+valign = 1
+clip_text = true
+__meta__ = {
+"_edit_use_anchors_": false
+}

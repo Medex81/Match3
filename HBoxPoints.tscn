@@ -1,0 +1,19 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://Game/Assets/time_scores.png" type="Texture" id=1]
+[ext_resource path="res://Game/Assets/points.png" type="Texture" id=2]
+
+[node name="HBoxPoints" type="HBoxContainer"]
+margin_right = 40.0
+margin_bottom = 40.0
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="Sprite_icon" type="Sprite" parent="."]
+scale = Vector2( 0.2, 0.2 )
+texture = ExtResource( 2 )
+offset = Vector2( -50, 0 )
+
+[node name="Sprite_back" type="Sprite" parent="."]
+texture = ExtResource( 1 )

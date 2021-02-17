@@ -22,6 +22,7 @@ config/icon="res://icon.png"
 [autoload]
 
 g_world="*res://Game/Logic/World.gd"
+g_helper_mgr="*res://Game/Managers/Helper_mgr.gd"
 
 [display]
 

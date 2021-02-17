@@ -1,0 +1,14 @@
+[gd_scene load_steps=4 format=2]
+
+[ext_resource path="res://Game/Scenes/BaseCounter.tscn" type="PackedScene" id=1]
+[ext_resource path="res://Game/Assets/time.png" type="Texture" id=2]
+[ext_resource path="res://Game/Scenes/TimeContainer.gd" type="Script" id=3]
+
+[node name="TimeContainer" instance=ExtResource( 1 )]
+script = ExtResource( 3 )
+
+[node name="TextureRect" parent="NinePatchRect" index="0"]
+texture = ExtResource( 2 )
+
+[node name="Label" parent="NinePatchRect" index="1"]
+text = ""
