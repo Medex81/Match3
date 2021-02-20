@@ -8,6 +8,8 @@ onready var green_gem_tex_res = preload("res://Game/Assets/stone_green.png")
 onready var yellow_gem_tex_res = preload("res://Game/Assets/stone_yellow.png")
 onready var red_gem_tex_res = preload("res://Game/Assets/stone_pink.png")
 
+onready var hole_tex_res = preload("res://Game/Assets/scene.png")
+
 onready var m4_tex_res = preload("res://Game/Assets/blitz.png")
 onready var m5_tex_res = preload("res://Game/Assets/blitz_cross.png")
 onready var m6_tex_res = preload("res://Game/Assets/bomb.png")
@@ -86,6 +88,7 @@ func _ready():
 		scene_core.e_fields_types.EFT_GREEN: green_gem_tex_res, 
 		scene_core.e_fields_types.EFT_BLUE: blue_gem_tex_res, 
 		scene_core.e_fields_types.EFT_YELLOW: yellow_gem_tex_res,
+		scene_core.e_fields_types.EFT_HOLE: hole_tex_res,
 		scene_core.e_fields_types.EFT_ROCK: null, 
 		scene_core.e_fields_types.EFT_SAND: null,
 		scene_core.e_fields_types.EFT_M4: m4_tex_res, 
@@ -132,10 +135,13 @@ func on_controlClicked(sender):
 	if index > -1:
 		if sel_type:
 			scene_core.set_cell(index, sel_type)
+			return
 		for item in a_cells: 
 			# ячейка с которой обмениваем
 			if item.get_global_rect().has_point(get_global_mouse_position()):
 				var second_index = a_cells.find(item)
+				if scene_core.is_type_static(index) || scene_core.is_type_static(second_index):
+					return 
 				print("Swap cells  -> %d - %d" % [index, second_index])
 				effects_mgr.set_unique_effect(a_cells[second_index].get_node("Node2D"), "Border")
 				# проверяем, что ячейки смежные
