@@ -7,19 +7,24 @@ const n_rows = 10
 var fields_model = []
 # типы клеток
 enum e_fields_types{
-	EFT_RED, 
+	# динамические
+	EFT_RED = 1, 
 	EFT_GREEN, 
 	EFT_BLUE, 
 	EFT_YELLOW, 
-	EFT_EMPTY, 
-	EFT_ERROR, 
+	EFT_EMPTY,
+	EFT_ERROR,
+	# статические
+	EFT_HOLE, 
 	EFT_ROCK, 
 	EFT_SAND, 
+	# наградные
 	EFT_M3, 
-	EFT_M4, 
+	EFT_M4,
 	EFT_M5, 
 	EFT_M6, 
-	EFT_M7}
+	EFT_M7
+}
 var a_empty_cells = []
 # указатель на функцию в скрипте сцены отвечающий за обработку матчей
 var pf_match_clb = null
@@ -52,6 +57,12 @@ const timer_session_wait_time = 1
 const scene_timeout = 180
 var scene_start_time = 0
 
+func is_type_static(idx):
+	return fields_model[idx] > e_fields_types.EFT_ERROR && fields_model[idx] < e_fields_types.EFT_M3
+	
+func is_type_dinamic(idx):
+	return fields_model[idx] > e_fields_types.EFT_M3 || fields_model[idx] < e_fields_types.EFT_EMPTY
+	
 # можем получить сгнал о готовности дерева после родителя!
 func _ready():
 	timer_session.connect("timeout",self,"_on_timer_session_timeout")
@@ -68,9 +79,10 @@ func init():
 		timer.set_wait_time( timer_wait_time )
 		add_child(timer)
 	fields_model.clear()
+	print(e_fields_types)
 	for ind in n_cols * n_rows:
-		# тип должен указывать на элемент следующий за последним, чтобы можно было брать значение по модулю в пределах полей. 
-		var type = randi() % (e_fields_types.EFT_EMPTY)
+		# тип должен указывать на элемент следующий за последним, чтобы можно было брать значение по модулю в пределах полей.
+		var type = int(rand_range(e_fields_types.EFT_RED,e_fields_types.EFT_EMPTY))
 		fields_model.append(type)
 
 func get_auto_start_positions():
@@ -102,7 +114,7 @@ func get_auto_start_positions():
 								# находимся на верхней строке
 								if a_empty_cells[ind] < n_cols:
 									# сгенерировали новый тип клетки
-									var type = randi() % (e_fields_types.EFT_EMPTY)
+									var type = int(rand_range(e_fields_types.EFT_RED,e_fields_types.EFT_EMPTY))
 									# заменили старий тип в модели на новый
 									fields_model[a_empty_cells[ind]] = type
 									# удаляем из обрабатываемого массива пустых клеток - созданную
@@ -131,8 +143,11 @@ func get_type_from_pos(x, y):
 	else:
 		return e_fields_types.EFT_ERROR
 
-func get_ind_from_pos(x, y):
+func get_ind_from_pos(x:int, y:int):
 	return y * n_cols + x
+	
+func get_ind_from_pos2(pos:Vector2):
+	return get_ind_from_pos(pos.x,pos. y)
 	
 func get_pos_from_ind(index):
 	return Vector2(index % n_cols, index / n_rows)
@@ -142,6 +157,8 @@ func find_all_potential_matches():
 	for x in n_cols:
 		for y in n_rows:
 			var cur_type = get_type_from_pos(x, y)
+			if is_type_static(get_ind_from_pos(x, y)):
+				continue
 			# на клетку ниже, проверяем окрестность
 			if cur_type == get_type_from_pos(x, y + 1):
 				# в
@@ -230,6 +247,9 @@ func is_near(first_index, second_index):
 
 # проверить, что после обмена ячеек появился матч
 func check_swap_cells(first_index, second_index):
+	if is_type_static(first_index) || is_type_static(second_index):
+		return
+	
 	var type_min = min(fields_model[first_index], fields_model[second_index])
 	var type_max = max(fields_model[first_index], fields_model[second_index])
 	
@@ -246,7 +266,13 @@ func check_swap_cells(first_index, second_index):
 	var matches = find_matches()
 	if pf_swap_clb && !matches.empty():
 		pf_swap_clb.call_func(first_index, second_index)
-		match_awards(matches)
+		for matched in matches:
+			if first_index in matched:
+				match_awards(matches, first_index)
+				break
+			if second_index in matched:
+				match_awards(matches, second_index)
+				break
 	# матча нет - вернуть назад
 	else:
 		tmp = fields_model[second_index]
@@ -262,6 +288,8 @@ func find_matches():
 		var result = [[x, 0]]
 		for y in range (1, n_rows):
 			var cur_type = get_type_from_pos(x, y)
+			if is_type_static(get_ind_from_pos(x, y)):
+				continue
 			# несколько последовательно расположенных клеток с одинаковым типом
 			# пропускаем всё что не кристаллы
 			if cur_type == last_type && cur_type < e_fields_types.EFT_EMPTY:
@@ -293,8 +321,10 @@ func find_matches():
 		var result = [[0, y]]
 		for x in range (1, n_cols):
 			var cur_type = get_type_from_pos(x, y)
+			if is_type_static(get_ind_from_pos(x, y)):
+				continue
 			# несколько последовательно расположенных клеток с одинаковым типом
-			if cur_type == last_type:
+			if cur_type == last_type && cur_type < e_fields_types.EFT_EMPTY:
 				cur_count += 1
 				result.append([x, y])
 			# конец последовательности текущего типа
@@ -355,20 +385,20 @@ func get_reward_type_array(idx):
 	match fields_model[idx]:
 		e_fields_types.EFT_M4:
 			for vert in n_rows:
-				if (get_type_from_pos(pos.x, vert)) != e_fields_types.EFT_ERROR:
+				if get_type_from_pos(pos.x, vert) != e_fields_types.EFT_ERROR && !is_type_static(get_ind_from_pos(pos.x, vert)):
 					ret.append(get_ind_from_pos(pos.x, vert))
 		e_fields_types.EFT_M5:
 			for vert in n_rows:
-				if (get_type_from_pos(pos.x, pos.y)) != e_fields_types.EFT_ERROR:
+				if get_type_from_pos(pos.x, vert) != e_fields_types.EFT_ERROR && !is_type_static(get_ind_from_pos(pos.x, vert)):
 					ret.append(get_ind_from_pos(pos.x, vert))
 			for hor in n_cols:
-				if (get_type_from_pos(hor, pos.y)) != e_fields_types.EFT_ERROR:
+				if (get_type_from_pos(hor, pos.y)) != e_fields_types.EFT_ERROR && !is_type_static(get_ind_from_pos(hor, pos.y)):
 					ret.append(get_ind_from_pos(hor, pos.y))
 		e_fields_types.EFT_M6:
 			pos += Vector2(-1, -1)
 			for vert in 3:
 				for hor in 3:
-					if (get_type_from_pos(pos.x + hor, pos.y + vert)) != e_fields_types.EFT_ERROR:
+					if (get_type_from_pos(pos.x + hor, pos.y + vert)) != e_fields_types.EFT_ERROR && !is_type_static(get_ind_from_pos(pos.x + hor, pos.y + vert)):
 						ret.append(get_ind_from_pos(pos.x + hor, pos.y + vert))
 		e_fields_types.EFT_M7:
 			for idx in n_rows * n_cols:
@@ -376,7 +406,7 @@ func get_reward_type_array(idx):
 	return ret
 
 # выдаём награду за совпадение(очки, подсказки).
-func match_awards(multi_match_inds):
+func match_awards(multi_match_inds, position = null):
 	if pf_match_clb && !multi_match_inds.empty():
 		pf_match_clb.call_func(multi_match_inds)
 	else:
@@ -442,10 +472,12 @@ func match_awards(multi_match_inds):
 			
 		if reward_cell_type > e_fields_types.EFT_M3:
 			match_inds.sort()
-			var reward_idx = match_inds.size() / 2 - 1
-			fields_model[match_inds[reward_idx]] = reward_cell_type
-			pf_create_clb.call_func(match_inds[reward_idx], reward_cell_type)
-			match_inds.remove(reward_idx)
+			var idx = match_inds.find(position)
+			# позиционируем награду в свап который привёл к матчу
+			if idx > -1:
+				fields_model[position] = reward_cell_type
+				pf_create_clb.call_func(position, reward_cell_type)
+				match_inds.remove(idx)
 		a_empty_cells += match_inds
 		
 		for ind in match_inds:
@@ -482,7 +514,7 @@ func _on_timer_timeout():
 					# находимся на верхней строке
 					if a_empty_cells[ind] < n_cols:
 						# сгенерировали новый тип клетки
-						var type = randi() % (e_fields_types.EFT_EMPTY)
+						var type = int(rand_range(e_fields_types.EFT_RED,e_fields_types.EFT_EMPTY))
 						# заменили старий тип в модели на новый
 						fields_model[a_empty_cells[ind]] = type
 						# вызвали метод из представления отвечающий за визуализацию создания новой клетки с новым типом
@@ -491,19 +523,34 @@ func _on_timer_timeout():
 						a_empty_cells[ind] = -1
 					else:
 						# позиция выше с которой перемещаем клетку
-						var top_ind = a_empty_cells[ind] - n_cols
-						# проверяем, что выше не пустая клетка
-						if a_empty_cells.has(top_ind):
+						var cur_pos = get_pos_from_ind(a_empty_cells[ind])
+						var top_idx = get_ind_from_pos2(cur_pos + Vector2(0, -1))
+						var left_idx = get_ind_from_pos2(cur_pos + Vector2(-1, -1))
+						var right_idx = get_ind_from_pos2(cur_pos + Vector2(1, -1))
+						var from_ind = null
+						if fields_model[top_idx] == e_fields_types.EFT_EMPTY:
 							continue
+						if a_empty_cells.has(top_idx) || is_type_static(top_idx) || fields_model[top_idx] == e_fields_types.EFT_EMPTY:
+							if a_empty_cells.has(left_idx) || is_type_static(left_idx) || fields_model[left_idx] == e_fields_types.EFT_EMPTY:
+								if a_empty_cells.has(right_idx) || is_type_static(right_idx) || fields_model[right_idx] == e_fields_types.EFT_EMPTY:
+									a_empty_cells[ind] = -1
+									continue
+								else:
+									from_ind = right_idx
+							else:
+								from_ind = left_idx
+						else:
+							from_ind = top_idx
+						
 						# тип перемещаемой сверху клетки
-						var bt_type = fields_model[top_ind]
+						var bt_type = fields_model[a_empty_cells[ind]]
 						# меняем типы клеток
-						fields_model[a_empty_cells[ind]] = fields_model[top_ind]
-						fields_model[top_ind] = bt_type
+						fields_model[a_empty_cells[ind]] = fields_model[from_ind]
+						fields_model[from_ind] = bt_type
 						# просим представление обменять клетки
-						pf_swap_clb.call_func(top_ind, a_empty_cells[ind])
+						pf_swap_clb.call_func(from_ind, a_empty_cells[ind])
 						# в массиве пустых клеток меняем значение индекса на индекс клетки сверху
-						a_empty_cells[ind] = top_ind
+						a_empty_cells[ind] = from_ind
 	if is_proc == false:
 		timer.stop()
 		# после матча и смещения ячеек проверяем что не появилось новых матчей
