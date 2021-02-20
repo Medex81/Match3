@@ -473,10 +473,12 @@ func match_awards(multi_match_inds, position = null):
 		if reward_cell_type > e_fields_types.EFT_M3:
 			match_inds.sort()
 			var idx = match_inds.find(position)
+			if idx == -1:
+				idx = match_inds.size() / 2
 			# позиционируем награду в свап который привёл к матчу
 			if idx > -1:
-				fields_model[position] = reward_cell_type
-				pf_create_clb.call_func(position, reward_cell_type)
+				fields_model[match_inds[idx]] = reward_cell_type
+				pf_create_clb.call_func(match_inds[idx], reward_cell_type)
 				match_inds.remove(idx)
 		a_empty_cells += match_inds
 		
