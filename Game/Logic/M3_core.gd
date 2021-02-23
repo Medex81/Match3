@@ -288,8 +288,8 @@ func find_matches():
 		var result = [[x, 0]]
 		for y in range (1, n_rows):
 			var cur_type = get_type_from_pos(x, y)
-			if is_type_static(get_ind_from_pos(x, y)):
-				continue
+			#if is_type_static(get_ind_from_pos(x, y)):
+			#	continue
 			# несколько последовательно расположенных клеток с одинаковым типом
 			# пропускаем всё что не кристаллы
 			if cur_type == last_type && cur_type < e_fields_types.EFT_EMPTY:
@@ -385,24 +385,25 @@ func get_reward_type_array(idx):
 	match fields_model[idx]:
 		e_fields_types.EFT_M4:
 			for vert in n_rows:
-				if get_type_from_pos(pos.x, vert) != e_fields_types.EFT_ERROR && !is_type_static(get_ind_from_pos(pos.x, vert)):
+				if get_type_from_pos(pos.x, vert) != e_fields_types.EFT_ERROR && is_type_dinamic(get_ind_from_pos(pos.x, vert)):
 					ret.append(get_ind_from_pos(pos.x, vert))
 		e_fields_types.EFT_M5:
 			for vert in n_rows:
-				if get_type_from_pos(pos.x, vert) != e_fields_types.EFT_ERROR && !is_type_static(get_ind_from_pos(pos.x, vert)):
+				if get_type_from_pos(pos.x, vert) != e_fields_types.EFT_ERROR && is_type_dinamic(get_ind_from_pos(pos.x, vert)):
 					ret.append(get_ind_from_pos(pos.x, vert))
 			for hor in n_cols:
-				if (get_type_from_pos(hor, pos.y)) != e_fields_types.EFT_ERROR && !is_type_static(get_ind_from_pos(hor, pos.y)):
+				if (get_type_from_pos(hor, pos.y)) != e_fields_types.EFT_ERROR && is_type_dinamic(get_ind_from_pos(hor, pos.y)):
 					ret.append(get_ind_from_pos(hor, pos.y))
 		e_fields_types.EFT_M6:
 			pos += Vector2(-1, -1)
 			for vert in 3:
 				for hor in 3:
-					if (get_type_from_pos(pos.x + hor, pos.y + vert)) != e_fields_types.EFT_ERROR && !is_type_static(get_ind_from_pos(pos.x + hor, pos.y + vert)):
+					if (get_type_from_pos(pos.x + hor, pos.y + vert)) != e_fields_types.EFT_ERROR && is_type_dinamic(get_ind_from_pos(pos.x + hor, pos.y + vert)):
 						ret.append(get_ind_from_pos(pos.x + hor, pos.y + vert))
 		e_fields_types.EFT_M7:
-			for idx in n_rows * n_cols:
-				ret.append(idx)
+			for idx in (n_rows * n_cols):
+				if is_type_dinamic(idx):
+					ret.append(idx)
 	return ret
 
 # выдаём награду за совпадение(очки, подсказки).
@@ -530,12 +531,14 @@ func _on_timer_timeout():
 						var left_idx = get_ind_from_pos2(cur_pos + Vector2(-1, -1))
 						var right_idx = get_ind_from_pos2(cur_pos + Vector2(1, -1))
 						var from_ind = null
-						if fields_model[top_idx] == e_fields_types.EFT_EMPTY:
+						if is_type_static(top_idx) && is_type_static(left_idx) && is_type_static(right_idx):
+							fields_model[a_empty_cells[ind]] = e_fields_types.EFT_EMPTY
+							a_empty_cells[ind] = -1
 							continue
+							
 						if a_empty_cells.has(top_idx) || is_type_static(top_idx) || fields_model[top_idx] == e_fields_types.EFT_EMPTY:
 							if a_empty_cells.has(left_idx) || is_type_static(left_idx) || fields_model[left_idx] == e_fields_types.EFT_EMPTY:
 								if a_empty_cells.has(right_idx) || is_type_static(right_idx) || fields_model[right_idx] == e_fields_types.EFT_EMPTY:
-									a_empty_cells[ind] = -1
 									continue
 								else:
 									from_ind = right_idx
