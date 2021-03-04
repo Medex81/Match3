@@ -74,6 +74,9 @@ func hint_proc(from_ind, to_ind):
 		a_cells[from_ind].get_node("Node2D/Sprite_select").visible = true
 	if a_cells[to_ind].has_node("Node2D/Sprite_select") :
 		a_cells[to_ind].get_node("Node2D/Sprite_select").visible = true
+		
+func cell_points(ind, points):
+	pass
 
 func set_points(points:int):
 	gui.set_points_change(points)
@@ -104,6 +107,7 @@ func _ready():
 	scene_core.pf_hint_clb =  funcref(self, "hint_proc")
 	scene_core.pf_set_points_clb =  funcref(self, "set_points")
 	scene_core.pf_set_timeout_clb =  funcref(self, "set_timeout")
+	scene_core.pf_cell_points_clb =  funcref(self, "cell_points")
 	scene_core.init()
 	scene_core.get_auto_start_positions()
 	if scene_core.n_cols != null:

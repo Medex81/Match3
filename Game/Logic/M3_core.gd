@@ -38,6 +38,7 @@ var pf_hint_clb = null
 var pf_set_points_clb = null
 # указатель на функцию в скрипте сцены отвечающий за отображение ограничения по времени
 var pf_set_timeout_clb = null
+var pf_cell_points_clb = null
 # 2 - поиск пересечений 3 и более последовательных клеток
 # 1 - поиск пересечений 2 и более последовательных клеток, находит пересечения 2 х 2х
 const n_cross_match_len = 2
@@ -62,6 +63,9 @@ func is_type_static(idx):
 	
 func is_type_dinamic(idx):
 	return fields_model[idx] > e_fields_types.EFT_M3 || fields_model[idx] < e_fields_types.EFT_EMPTY
+	
+func is_type_reward(idx):
+	return fields_model[idx] > e_fields_types.EFT_M3
 	
 # можем получить сгнал о готовности дерева после родителя!
 func _ready():
@@ -144,7 +148,10 @@ func get_type_from_pos(x, y):
 		return e_fields_types.EFT_ERROR
 
 func get_ind_from_pos(x:int, y:int):
-	return y * n_cols + x
+	if x >= 0 && x <= n_cols - 1 && y >= 0 && y <= n_rows - 1:
+		return y * n_cols + x
+	else:
+		return -1
 	
 func get_ind_from_pos2(pos:Vector2):
 	return get_ind_from_pos(pos.x,pos. y)
@@ -378,40 +385,65 @@ func find_matches():
 # ищем совпадения по всему игровому полю.
 func find_all_matches():
 	match_awards(find_matches())
-
+	
+# получить индексы ячеек которые покрывает наградная
 func get_reward_type_array(idx):
 	var pos = get_pos_from_ind(idx)
 	var ret = []
-	match fields_model[idx]:
+	ret.append(idx)
+	points_counter += 2 * fields_model[idx]
+	if pf_cell_points_clb:
+		pf_cell_points_clb.call_func(idx, 2 * fields_model[idx])
+	var type = fields_model[idx]
+	if is_type_reward(idx):
+		fields_model[idx] = e_fields_types.EFT_BLUE
+	
+	match type:
 		e_fields_types.EFT_M4:
 			for vert in n_rows:
-				if get_type_from_pos(pos.x, vert) != e_fields_types.EFT_ERROR && is_type_dinamic(get_ind_from_pos(pos.x, vert)):
-					ret.append(get_ind_from_pos(pos.x, vert))
+				var cur_ind = get_ind_from_pos(pos.x, vert)
+				ret += _check_union(cur_ind, idx)
 		e_fields_types.EFT_M5:
 			for vert in n_rows:
-				if get_type_from_pos(pos.x, vert) != e_fields_types.EFT_ERROR && is_type_dinamic(get_ind_from_pos(pos.x, vert)):
-					ret.append(get_ind_from_pos(pos.x, vert))
+				var cur_ind = get_ind_from_pos(pos.x, vert)
+				ret += _check_union(cur_ind, idx)
 			for hor in n_cols:
-				if (get_type_from_pos(hor, pos.y)) != e_fields_types.EFT_ERROR && is_type_dinamic(get_ind_from_pos(hor, pos.y)):
-					ret.append(get_ind_from_pos(hor, pos.y))
+				var cur_ind = get_ind_from_pos(hor, pos.y)
+				ret += _check_union(cur_ind, idx)
 		e_fields_types.EFT_M6:
 			pos += Vector2(-1, -1)
 			for vert in 3:
 				for hor in 3:
-					if (get_type_from_pos(pos.x + hor, pos.y + vert)) != e_fields_types.EFT_ERROR && is_type_dinamic(get_ind_from_pos(pos.x + hor, pos.y + vert)):
-						ret.append(get_ind_from_pos(pos.x + hor, pos.y + vert))
+					var cur_ind = get_ind_from_pos(pos.x + hor, pos.y + vert)
+					ret += _check_union(cur_ind, idx)
 		e_fields_types.EFT_M7:
-			for idx in (n_rows * n_cols):
-				if is_type_dinamic(idx):
-					ret.append(idx)
+			# нужно проверять тип ячейки и добавлять в матч каждую наградную для начисления очков и запуска анимации и эффектов
+			for cur_ind in (n_rows * n_cols):
+				if is_type_dinamic(cur_ind):
+					ret.append(cur_ind)
+					if pf_cell_points_clb:
+						pf_cell_points_clb.call_func(cur_ind, fields_model[cur_ind])
+					points_counter += fields_model[cur_ind]
 	return ret
+	
+func _check_union(cur_ind, start_ind):
+	var ret_array = []
+	if cur_ind > -1 && is_type_dinamic(cur_ind):
+		ret_array.append(cur_ind)
+		if pf_cell_points_clb:
+			pf_cell_points_clb.call_func(cur_ind, fields_model[cur_ind])
+		points_counter += fields_model[cur_ind]
+		# рекурсивно добавляем индексы ячеек в зоне встретившейся награды(подрываем их)
+		if is_type_reward(cur_ind) && cur_ind != start_ind:
+			ret_array += get_reward_type_array(cur_ind)
+	return ret_array
 
 # выдаём награду за совпадение(очки, подсказки).
 func match_awards(multi_match_inds, position = null):
-	if pf_match_clb && !multi_match_inds.empty():
-		pf_match_clb.call_func(multi_match_inds)
-	else:
+	if pf_match_clb == null || multi_match_inds.empty():
 		return
+		
+	pf_match_clb.call_func(multi_match_inds)
 	
 	# удаляем индексы совпавших клеток из основного массива
 	a_empty_cells.clear()
@@ -419,6 +451,16 @@ func match_awards(multi_match_inds, position = null):
 		# количество совпадений
 		var reward_cell_type = e_fields_types.EFT_M3
 		match match_inds.size():
+			# подрыв ячейки
+			1:
+				# получим массив индексов ячеек которые подрывает ревард и добавим в массив сматченных для удаления
+				var match_inds_rew = get_reward_type_array(match_inds[0])
+				if match_inds_rew.size() == 1:
+					if pf_cell_points_clb:
+						pf_cell_points_clb.call_func(match_inds[0], fields_model[match_inds[0]])
+				
+				match_inds += match_inds_rew
+			# матч двух ячеек одна из которых или обе наградные 
 			2:
 				var type_min = min(fields_model[match_inds[0]], fields_model[match_inds[1]])
 				var type_max = max(fields_model[match_inds[0]], fields_model[match_inds[1]])
@@ -447,6 +489,7 @@ func match_awards(multi_match_inds, position = null):
 				# свап награды и кристалла
 				if type_min < e_fields_types.EFT_EMPTY && type_max > e_fields_types.EFT_M3:
 					fields_model[match_inds[1]] = type_max
+					fields_model[match_inds[0]] = type_min
 					# получим массив индексов ячеек которые подрывает ревард и добавим в массив сматченных для удаления
 					var match_inds_rew = get_reward_type_array(match_inds[1])
 					if pf_match_clb && !match_inds_rew.empty():
@@ -481,7 +524,7 @@ func match_awards(multi_match_inds, position = null):
 				fields_model[match_inds[idx]] = reward_cell_type
 				pf_create_clb.call_func(match_inds[idx], reward_cell_type)
 				match_inds.remove(idx)
-		a_empty_cells += match_inds
+		a_empty_cells += match_inds		
 		
 		for ind in match_inds:
 			fields_model[ind] = e_fields_types.EFT_EMPTY
