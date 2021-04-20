@@ -18,7 +18,7 @@ onready var m7_tex_res = preload("res://Game/Assets/total_bomb.png")
 onready var gui = $"../../HBoxHUD"
 
 # Логика сцены
-onready var scene_core = preload("res://Game/Logic/match3_core/M3_core.gd").new()
+onready var scene_core = preload("res://Game/Logic/M3_core.gd").new()
 onready var effects_mgr = preload("res://Game/Managers/Effects_mgr.gd").new()
 # размер ячейки в пикселах
 var n_field_size = 50
