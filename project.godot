@@ -28,6 +28,13 @@ g_helper_mgr="*res://Game/Managers/Helper_mgr.gd"
 
 window/stretch/aspect="expand"
 
+[importer_defaults]
+
+texture_atlas={
+"atlas_file": "",
+"import_mode": 0
+}
+
 [rendering]
 
 quality/driver/driver_name="GLES2"
