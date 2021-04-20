@@ -1,3 +1,6 @@
 [submodule "Game/Logic"]
 	path = Game/Logic
 	url = https://github.com/Medex81/match3_core.git
+[submodule "Game/Managers"]
+	path = Game/Managers
+	url = https://github.com/Medex81/Managers.git
