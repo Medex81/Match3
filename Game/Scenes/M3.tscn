@@ -5,7 +5,7 @@
 [ext_resource path="res://Game/Scenes/GridContainer.gd" type="Script" id=3]
 [ext_resource path="res://Game/Scenes/M3.gd" type="Script" id=4]
 [ext_resource path="res://Game/Scenes/HUD_M3.tscn" type="PackedScene" id=5]
-[ext_resource path="res://Game/Scenes/VBC_m3_cond_generator.gd" type="Script" id=8]
+[ext_resource path="res://Game/Editor/M3_editor_panel.tscn" type="PackedScene" id=6]
 
 [node name="Node2D" type="Control"]
 anchor_right = 1.0
@@ -29,115 +29,12 @@ __meta__ = {
 "_edit_use_anchors_": false
 }
 
+[node name="VBC_m3_cond_generator" parent="TextureRect_scene_back" instance=ExtResource( 6 )]
+
 [node name="HBoxHUD" parent="TextureRect_scene_back" instance=ExtResource( 5 )]
 margin_top = 2.0
 margin_bottom = 2.0
 mouse_filter = 2
-
-[node name="VBC_m3_cond_generator" type="VBoxContainer" parent="TextureRect_scene_back"]
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-margin_top = -24.0
-margin_bottom = 30.0
-rect_min_size = Vector2( 600, 0 )
-script = ExtResource( 8 )
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="SC_settings" type="ScrollContainer" parent="TextureRect_scene_back/VBC_m3_cond_generator"]
-margin_right = 1023.0
-margin_bottom = 20.0
-rect_min_size = Vector2( 0, 20 )
-
-[node name="HBC_settings" type="HBoxContainer" parent="TextureRect_scene_back/VBC_m3_cond_generator/SC_settings"]
-margin_right = 385.0
-margin_bottom = 20.0
-__meta__ = {
-"_edit_use_anchors_": false
-}
-
-[node name="HBC_steps" type="HBoxContainer" parent="TextureRect_scene_back/VBC_m3_cond_generator/SC_settings/HBC_settings"]
-margin_right = 89.0
-margin_bottom = 20.0
-
-[node name="Label" type="Label" parent="TextureRect_scene_back/VBC_m3_cond_generator/SC_settings/HBC_settings/HBC_steps"]
-margin_top = 3.0
-margin_right = 35.0
-margin_bottom = 17.0
-text = "Steps"
-
-[node name="HSlider_step" type="HSlider" parent="TextureRect_scene_back/VBC_m3_cond_generator/SC_settings/HBC_settings/HBC_steps"]
-margin_left = 39.0
-margin_right = 89.0
-margin_bottom = 16.0
-rect_min_size = Vector2( 50, 16 )
-
-[node name="HBC_coins" type="HBoxContainer" parent="TextureRect_scene_back/VBC_m3_cond_generator/SC_settings/HBC_settings"]
-margin_left = 93.0
-margin_right = 182.0
-margin_bottom = 20.0
-
-[node name="Label" type="Label" parent="TextureRect_scene_back/VBC_m3_cond_generator/SC_settings/HBC_settings/HBC_coins"]
-margin_top = 3.0
-margin_right = 35.0
-margin_bottom = 17.0
-text = "Coins"
-
-[node name="HSlider_coins" type="HSlider" parent="TextureRect_scene_back/VBC_m3_cond_generator/SC_settings/HBC_settings/HBC_coins"]
-margin_left = 39.0
-margin_right = 89.0
-margin_bottom = 16.0
-rect_min_size = Vector2( 50, 16 )
-max_value = 100000.0
-
-[node name="HBC_time" type="HBoxContainer" parent="TextureRect_scene_back/VBC_m3_cond_generator/SC_settings/HBC_settings"]
-margin_left = 186.0
-margin_right = 272.0
-margin_bottom = 20.0
-
-[node name="Label" type="Label" parent="TextureRect_scene_back/VBC_m3_cond_generator/SC_settings/HBC_settings/HBC_time"]
-margin_top = 3.0
-margin_right = 32.0
-margin_bottom = 17.0
-text = "Time"
-
-[node name="HSlider_time" type="HSlider" parent="TextureRect_scene_back/VBC_m3_cond_generator/SC_settings/HBC_settings/HBC_time"]
-margin_left = 36.0
-margin_right = 86.0
-margin_bottom = 16.0
-rect_min_size = Vector2( 50, 16 )
-max_value = 600.0
-
-[node name="HBC_blue" type="HBoxContainer" parent="TextureRect_scene_back/VBC_m3_cond_generator/SC_settings/HBC_settings"]
-margin_left = 276.0
-margin_right = 385.0
-margin_bottom = 20.0
-
-[node name="Label" type="Label" parent="TextureRect_scene_back/VBC_m3_cond_generator/SC_settings/HBC_settings/HBC_blue"]
-margin_right = 55.0
-margin_bottom = 20.0
-rect_min_size = Vector2( 20, 20 )
-text = "Selected"
-
-[node name="HSlider_selected" type="HSlider" parent="TextureRect_scene_back/VBC_m3_cond_generator/SC_settings/HBC_settings/HBC_blue"]
-margin_left = 59.0
-margin_right = 109.0
-margin_bottom = 16.0
-rect_min_size = Vector2( 50, 16 )
-
-[node name="SC_types" type="ScrollContainer" parent="TextureRect_scene_back/VBC_m3_cond_generator"]
-margin_top = 24.0
-margin_right = 1023.0
-margin_bottom = 74.0
-rect_min_size = Vector2( 0, 50 )
-
-[node name="HBC_types" type="HBoxContainer" parent="TextureRect_scene_back/VBC_m3_cond_generator/SC_types"]
-custom_constants/separation = 1
-__meta__ = {
-"_edit_use_anchors_": false
-}
 
 [node name="TextureRect_m3_back" type="NinePatchRect" parent="TextureRect_scene_back"]
 anchor_left = 0.5
@@ -173,8 +70,3 @@ script = ExtResource( 3 )
 __meta__ = {
 "_edit_use_anchors_": false
 }
-[connection signal="send_sel_cell_type_changed" from="TextureRect_scene_back/VBC_m3_cond_generator" to="TextureRect_scene_back/TextureRect_m3_back/GridContainer" method="_on_VBC_m3_cond_generator_send_sel_cell_type_changed"]
-[connection signal="value_changed" from="TextureRect_scene_back/VBC_m3_cond_generator/SC_settings/HBC_settings/HBC_steps/HSlider_step" to="TextureRect_scene_back/HBoxHUD" method="_on_HSlider_step_value_changed"]
-[connection signal="value_changed" from="TextureRect_scene_back/VBC_m3_cond_generator/SC_settings/HBC_settings/HBC_coins/HSlider_coins" to="TextureRect_scene_back/HBoxHUD" method="_on_HSlider_coins_value_changed"]
-[connection signal="value_changed" from="TextureRect_scene_back/VBC_m3_cond_generator/SC_settings/HBC_settings/HBC_time/HSlider_time" to="TextureRect_scene_back/HBoxHUD" method="_on_HSlider_time_value_changed"]
-[connection signal="value_changed" from="TextureRect_scene_back/VBC_m3_cond_generator/SC_settings/HBC_settings/HBC_blue/HSlider_selected" to="TextureRect_scene_back/HBoxHUD" method="_on_HSlider_selected_value_changed"]
